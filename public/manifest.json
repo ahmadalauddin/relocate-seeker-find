@@ -1,0 +1,33 @@
+
+{
+  "manifest_version": 3,
+  "name": "Job Relocation Detector",
+  "version": "1.0.0",
+  "description": "Automatically detects relocation assistance and job type information on job posting sites",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.linkedin.com/jobs/*",
+        "*://*.indeed.com/viewjob*",
+        "*://*.seek.com.au/job/*",
+        "*://*.seek.co.nz/job/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Job Relocation Detector"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

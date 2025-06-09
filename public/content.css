@@ -1,0 +1,27 @@
+
+/* Content script styles */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.job-analyzer-indicator {
+  transition: all 0.3s ease;
+}
+
+.job-analyzer-indicator:hover {
+  transform: scale(1.05);
+}
+
+/* Ensure our indicator doesn't interfere with site styles */
+.job-analyzer-indicator * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
