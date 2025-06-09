@@ -1,7 +1,7 @@
 
 {
   "manifest_version": 3,
-  "name": "Job Relocation Detector",
+  "name": "Career Navigator",
   "version": "1.0.0",
   "description": "Automatically detects relocation assistance and job type information on job posting sites",
   "permissions": [
@@ -23,7 +23,7 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Job Relocation Detector"
+    "default_title": "Career Navigator"
   },
   "icons": {
     "16": "icon16.png",

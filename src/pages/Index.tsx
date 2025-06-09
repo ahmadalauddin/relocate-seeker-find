@@ -19,7 +19,7 @@ const Index = () => {
               </div>
             </div>
             <h1 className="text-5xl font-bold text-gray-900 mb-6">
-              Job Relocation Detector
+              Career Navigator
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
               Chrome extension that automatically identifies relocation assistance, job types, and key details 
