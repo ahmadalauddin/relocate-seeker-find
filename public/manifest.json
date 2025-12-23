@@ -11,12 +11,15 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*.linkedin.com/jobs/*",
-        "*://*.indeed.com/viewjob*",
-        "*://*.seek.com.au/job/*",
-        "*://*.seek.co.nz/job/*"
+        "*://*/jobs/*",
+        "*://*/job/*",
+        "*://*/careers/*",
+        "*://*/career/*",
+        "*://*/vacancies/*",
+        "*://*/vacancy/*",
+        "*://*/opportunities/*"
       ],
-      "js": ["content.js"],
+      "js": ["config.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

@@ -1,4 +1,3 @@
-
 // Popup script for Chrome extension
 document.addEventListener('DOMContentLoaded', async () => {
   try {
@@ -86,6 +85,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       keywordsElement.textContent = 'Make sure you\'re on a specific job posting page';
       keywordsElement.style.color = '#666';
     }
+
   } catch (error) {
     console.error('Career Navigator: Popup error:', error);
     document.getElementById('pageStatus').textContent = 'Extension error occurred';

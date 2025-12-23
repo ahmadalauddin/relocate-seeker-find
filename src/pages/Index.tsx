@@ -22,7 +22,7 @@ const Index = () => {
               Career Navigator
             </h1>
             <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Chrome extension that automatically identifies relocation assistance, job types, and key details 
+              Chrome extension that automatically identifies relocation assistance, job types, and key details
               from job postings across LinkedIn, Indeed, Seek, and other major job sites.
             </p>
             <div className="flex flex-wrap justify-center gap-4 mb-12">
@@ -68,7 +68,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Automatically identifies if a job offers relocation assistance, visa sponsorship, 
+                Automatically identifies if a job offers relocation assistance, visa sponsorship,
                 or moving allowances from job descriptions.
               </CardDescription>
             </CardContent>
@@ -83,7 +83,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Detects whether positions are remote, hybrid, on-site, contract, 
+                Detects whether positions are remote, hybrid, on-site, contract,
                 or permanent roles instantly.
               </CardDescription>
             </CardContent>
@@ -98,7 +98,7 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <CardDescription className="text-center">
-                Clear, non-intrusive badges appear on job pages showing relocation status 
+                Clear, non-intrusive badges appear on job pages showing relocation status
                 and job type at a glance.
               </CardDescription>
             </CardContent>
@@ -175,12 +175,12 @@ const Index = () => {
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer
         <div className="text-center mt-16 py-8">
           <p className="text-gray-600">
             Built with ❤️ for job seekers worldwide • Version 1.0.0
           </p>
-        </div>
+        </div> */}
       </div>
     </div>
   );
