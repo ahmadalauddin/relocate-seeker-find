@@ -2,7 +2,7 @@
 /* Content script styles */
 @keyframes slideIn {
   from {
-    transform: translateX(100%);
+    transform: translateX(20px);
     opacity: 0;
   }
   to {
@@ -11,12 +11,27 @@
   }
 }
 
-.job-analyzer-indicator {
-  transition: all 0.3s ease;
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+  50% {
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.25);
+  }
 }
 
-.job-analyzer-indicator:hover {
-  transform: scale(1.05);
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/*
+  IMPORTANT: Do NOT apply transform to this wrapper!
+  Transform on parent breaks position:fixed on children.
+  All hover effects should be on the inner element.
+*/
+.job-analyzer-indicator {
+  /* No transform here - it breaks position:fixed on children */
 }
 
 /* Ensure our indicator doesn't interfere with site styles */

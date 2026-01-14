@@ -27,6 +27,8 @@ class JobAnalyzer {
     this.indicator = null;
     this.retryCount = 0;
     this.maxRetries = 5;
+    this.isInitialLoad = true; // Flag to prevent duplicate analysis
+    this.hasAnalyzed = false; // Track if we've already analyzed
 
     this.init();
   }
@@ -34,10 +36,39 @@ class JobAnalyzer {
   init() {
     console.log('Career Navigator: Job Analyzer initialized on', window.location.href);
 
-    this.waitForContent();
     this.addMessageListener();
 
+    // Wait for page to be fully loaded before analyzing
+    if (document.readyState === 'complete') {
+      console.log('Career Navigator: Page already loaded, analyzing now');
+      this.performInitialAnalysis();
+    } else {
+      console.log('Career Navigator: Waiting for page to fully load...');
+      window.addEventListener('load', () => {
+        console.log('Career Navigator: Page fully loaded, starting analysis');
+        this.performInitialAnalysis();
+      });
+    }
+  }
+
+  performInitialAnalysis() {
+    // Perform initial analysis
+    this.waitForContent().then(() => {
+      // Mark initial load as complete
+      this.isInitialLoad = false;
+
+      // Now set up MutationObserver to watch for dynamic content changes
+      this.setupMutationObserver();
+    });
+  }
+
+  setupMutationObserver() {
     const observer = new MutationObserver((mutations) => {
+      // Skip if we're still in initial load
+      if (this.isInitialLoad) {
+        return;
+      }
+
       // Ignore mutations caused by the indicator itself
       for (const mutation of mutations) {
         if (
@@ -58,16 +89,31 @@ class JobAnalyzer {
           return;
         }
       }
-      this.debounce(() => {
-        console.log('Career Navigator: Content changed, re-analyzing...');
-        this.waitForContent();
-      }, 2000);
+
+      // Only re-analyze if significant content was added (not just minor DOM changes)
+      const hasSignificantChange = mutations.some(mutation =>
+        mutation.addedNodes.length > 0 &&
+        Array.from(mutation.addedNodes).some(node =>
+          node.nodeType === Node.ELEMENT_NODE &&
+          node.textContent &&
+          node.textContent.length > 100
+        )
+      );
+
+      if (hasSignificantChange) {
+        this.debounce(() => {
+          console.log('Career Navigator: Significant content change detected, re-analyzing...');
+          this.waitForContent();
+        }, 3000); // Increased debounce to 3 seconds
+      }
     });
 
     observer.observe(document.body, {
       childList: true,
       subtree: true
     });
+
+    console.log('Career Navigator: MutationObserver active, watching for content changes');
   }
 
   async waitForContent() {
@@ -238,7 +284,7 @@ class JobAnalyzer {
     const jobTypeAnalysis = this.analyzeJobType(content);
 
     // Check if AI analysis is enabled and needed
-    const aiEnabled = window.EXTENSION_CONFIG && window.EXTENSION_CONFIG.ENABLE_AI_ANALYSIS;
+    const aiEnabled = await this.isAIEnabled();
     const needsAI = !relocationAnalysis.found && !jobTypeAnalysis.found &&
                     relocationAnalysis.type === 'Not Mentioned';
 
@@ -279,12 +325,42 @@ class JobAnalyzer {
   }
 
   async getOpenAIApiKey() {
-    // Read API key from injected config
+    // First try to get from chrome.storage (user-configured)
+    try {
+      const result = await chrome.storage.local.get('settings');
+      if (result.settings && result.settings.apiKey) {
+        return result.settings.apiKey;
+      }
+    } catch (error) {
+      console.warn('Failed to read from chrome.storage:', error);
+    }
+
+    // Fallback to injected config (for development/default)
     if (window.EXTENSION_CONFIG && window.EXTENSION_CONFIG.OPENAI_API_KEY) {
       return window.EXTENSION_CONFIG.OPENAI_API_KEY;
     }
-    console.warn('OpenAI API key not found in config. Please ensure .env file is configured and extension is built.');
+
+    console.log('Career Navigator: No API key configured. AI analysis disabled.');
     return '';
+  }
+
+  async isAIEnabled() {
+    // Check chrome.storage first
+    try {
+      const result = await chrome.storage.local.get('settings');
+      if (result.settings && typeof result.settings.enableAI !== 'undefined') {
+        return result.settings.enableAI;
+      }
+    } catch (error) {
+      console.warn('Failed to read AI setting from chrome.storage:', error);
+    }
+
+    // Fallback to config
+    if (window.EXTENSION_CONFIG && typeof window.EXTENSION_CONFIG.ENABLE_AI_ANALYSIS !== 'undefined') {
+      return window.EXTENSION_CONFIG.ENABLE_AI_ANALYSIS;
+    }
+
+    return true; // Default to enabled
   }
 
   async hashContent(content) {
@@ -466,28 +542,43 @@ class JobAnalyzer {
     this.indicator.className = 'job-analyzer-indicator';
 
     this.indicator.innerHTML = `
-      <div style="
+      <div id="job-analyzer-no-content" style="
         position: fixed;
         top: 20px;
         right: 20px;
-        background: #f39c12;
+        background: linear-gradient(135deg, #f39c12 0%, #d68910 100%);
         color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
+        padding: 14px 22px;
+        border-radius: 16px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 14px;
         font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset;
         z-index: 10000;
-        max-width: 300px;
-        animation: slideIn 0.3s ease-out;
-        cursor: pointer;
+        max-width: 320px;
+        animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: default;
+        backdrop-filter: blur(10px);
+        transition: box-shadow 0.3s ease, filter 0.3s ease;
       ">
-        ⚠️ Unable to analyze this page
+        Unable to analyze this page
       </div>
     `;
 
     document.body.appendChild(this.indicator);
+
+    // Add hover effect
+    const indicatorEl = document.getElementById('job-analyzer-no-content');
+    if (indicatorEl) {
+      indicatorEl.addEventListener('mouseenter', () => {
+        indicatorEl.style.boxShadow = '0 8px 30px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.2) inset';
+        indicatorEl.style.filter = 'brightness(1.05)';
+      });
+      indicatorEl.addEventListener('mouseleave', () => {
+        indicatorEl.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset';
+        indicatorEl.style.filter = 'brightness(1)';
+      });
+    }
 
     // Remove after 5 seconds
     setTimeout(() => {
@@ -576,18 +667,20 @@ class JobAnalyzer {
         position: fixed;
         top: 20px;
         right: 20px;
-        background: ${backgroundColor};
+        background: linear-gradient(135deg, ${backgroundColor} 0%, ${this.adjustColor(backgroundColor, -15)} 100%);
         color: white;
-        padding: 12px 20px;
-        border-radius: 25px;
+        padding: 14px 22px;
+        border-radius: 16px;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         font-size: 14px;
         font-weight: 600;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset;
         z-index: 10000;
-        max-width: 350px;
-        animation: slideIn 0.3s ease-out;
+        max-width: 380px;
+        animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         cursor: default;
+        backdrop-filter: blur(10px);
+        transition: box-shadow 0.3s ease, filter 0.3s ease;
       ">
         ${indicatorContent}
       </div>
@@ -595,27 +688,45 @@ class JobAnalyzer {
 
     document.body.appendChild(this.indicator);
 
-    // Pause auto-removal on hover
+    // Pause auto-removal on hover + add subtle hover effect
     const indicatorInner = document.getElementById('job-analyzer-indicator-inner');
     let removeTimeout;
     const setRemoveTimeout = () => {
       removeTimeout = setTimeout(() => this.removeIndicator(), 7000);
     };
     setRemoveTimeout();
+
     if (indicatorInner) {
       indicatorInner.addEventListener('mouseenter', () => {
         clearTimeout(removeTimeout);
+        // Subtle hover effect without transform (which breaks position:fixed)
+        indicatorInner.style.boxShadow = '0 8px 30px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.2) inset';
+        indicatorInner.style.filter = 'brightness(1.05)';
       });
       indicatorInner.addEventListener('mouseleave', () => {
         setRemoveTimeout();
+        // Reset to original
+        indicatorInner.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15), 0 0 0 1px rgba(255,255,255,0.1) inset';
+        indicatorInner.style.filter = 'brightness(1)';
       });
     }
   }
+
+  // Helper to darken/lighten hex colors
+  adjustColor(color, amount) {
+    // Handle named colors
+    const colorMap = {
+      '#27ae60': amount < 0 ? '#1e8449' : '#2ecc71',
+      '#e74c3c': amount < 0 ? '#c0392b' : '#e74c3c',
+      '#2980b9': amount < 0 ? '#1f6692' : '#3498db',
+      '#95a5a6': amount < 0 ? '#7f8c8d' : '#bdc3c7',
+      '#e67e22': amount < 0 ? '#d35400' : '#f39c12',
+      '#f39c12': amount < 0 ? '#d68910' : '#f7b731'
+    };
+    return colorMap[color] || color;
+  }
 }
 
-// Initialize when DOM is ready
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => new JobAnalyzer());
-} else {
-  new JobAnalyzer();
-}
+// Initialize the extension
+// Note: The JobAnalyzer.init() method will handle waiting for page to fully load
+new JobAnalyzer();
